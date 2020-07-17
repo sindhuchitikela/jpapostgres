@@ -1,0 +1,135 @@
+buildscript {
+    ext {
+        springBootVersion = '2.2.2.RELEASE'
+    }
+    repositories {
+        maven { url 'https://binrepo.target.com/artifactory/plugins-release' }
+        maven { url "https://binrepo.target.com/artifactory/platform" }
+    }
+    dependencies {
+        classpath("org.springframework.boot:spring-boot-gradle-plugin:${springBootVersion}")
+        classpath("com.target.platform:platform-connector-gradle:2.0.8")
+    }
+}
+
+plugins {
+    id 'org.springframework.boot' version '2.2.2.RELEASE'
+    id 'io.spring.dependency-management' version '1.0.8.RELEASE'
+    id 'java'
+    id 'eclipse'
+    id 'groovy'
+    id 'maven'
+    id 'maven-publish'
+    id 'findbugs'
+    id 'jacoco'
+    id 'com.palantir.jacoco-coverage' version "0.4.0"
+}
+
+apply plugin: 'com.target.platform.connector.spring-boot'
+jar.enabled = true
+mainClassName = "com.pg.demo.category.CategoryApplication"
+
+def moduleName = 'Category_Service'
+// artifactory/maven descriptors:
+version = System.properties['version'] ?: 'SNAPSHOT'
+group = 'com.demo.pg'
+archivesBaseName = moduleName
+
+sourceCompatibility = 11
+targetCompatibility = 11
+
+repositories {
+    mavenLocal()
+    maven { url "https://binrepo.target.com/artifactory/cwl-virtual" }
+}
+
+jacoco {
+    toolVersion = "0.8.5"
+    reportsDir = file("$buildDir/customJacocoReportDir")
+}
+
+configurations.all {
+    exclude group: "org.slf4j", module: "slf4j-log4j12"
+    exclude group: 'org.apache.logging.log4j', module: 'log4j-slf4j-impl'
+    exclude group: 'org.springframework.boot', module: 'spring-boot-starter-logging'
+}
+ext {
+    set('springCloudVersion', "Hoxton.RELEASE")
+}
+dependencyManagement {
+    imports {
+        mavenBom "org.springframework.cloud:spring-cloud-dependencies:${springCloudVersion}"
+    }
+}
+dependencies {
+    def springVersion = '5.2.1.RELEASE'
+    def springGroup = 'org.springframework'
+    def springBootGroup = 'org.springframework.boot'
+    def springBootVersion = '2.2.2.RELEASE'
+    def jacksonVersion = '2.10.0'
+
+    compile(group: springBootGroup, name: 'spring-boot-starter-web', version: springBootVersion)
+    compile(group: springBootGroup, name: 'spring-boot-starter-actuator', version: springBootVersion)
+    compile(group: 'org.springframework.cloud', name: 'spring-cloud-starter-config')
+
+    compile(group: springGroup, name: 'spring-jdbc', version: springVersion)
+    compile(group: springGroup, name: 'spring-oxm', version: springVersion)
+    compile(group: springGroup, name: 'spring-tx', version: springVersion)
+    compile('commons-dbcp:commons-dbcp:1.4')
+    compile(group: 'com.fasterxml.jackson.core', name: 'jackson-annotations', version: jacksonVersion)
+    compile(group: 'com.fasterxml.jackson.core', name: 'jackson-databind', version: jacksonVersion)
+    compile(group: 'com.fasterxml.jackson.datatype', name: 'jackson-datatype-jsr310', version: jacksonVersion)
+
+    compile('org.apache.httpcomponents:httpclient:4.5.2')
+    compile(group: 'org.projectlombok', name: 'lombok', version: '1.18.10')
+    annotationProcessor 'org.projectlombok:lombok:1.18.10'
+
+    // validation
+    compile('javax.validation:validation-api:1.1.0.Final')
+    compile('org.hibernate:hibernate-validator:5.4.2.Final')
+
+    compile group: 'org.apache.commons', name: 'commons-collections4', version: '4.4'
+    compile group: 'org.apache.commons', name: 'commons-lang3', version: '3.6'
+
+
+
+    //API documentation
+    implementation "org.springdoc:springdoc-openapi-ui:1.2.34"
+
+    testCompile group: 'org.codehaus.groovy', name: 'groovy-all', version: '3.0.1', ext: 'pom'
+
+    testCompile(group: springBootGroup, name: 'spring-boot-starter-test', version: springBootVersion)
+    testImplementation group: 'org.spockframework', name: 'spock-core', version: '1.3-groovy-2.5'
+    testImplementation group: 'org.spockframework', name: 'spock-spring', version: '1.3-groovy-2.5'
+
+    compile(group: 'org.springframework.boot', name:'spring-boot-starter-data-jpa', version: '2.2.5.RELEASE')
+    compile group: 'org.postgresql', name: 'postgresql', version: '42.1.4'
+    compile group: 'org.liquibase', name: 'liquibase-core', version: '3.8.9'
+    compile group: 'org.springframework.boot', name: 'spring-boot-starter-jdbc', version: '2.2.6.RELEASE'
+
+}
+
+
+eclipse {
+    classpath {
+        containers.remove('org.eclipse.jdt.launching.JRE_CONTAINER')
+        containers 'org.eclipse.jdt.launching.JRE_CONTAINER/org.eclipse.jdt.internal.debug.ui.launcher.StandardVMType/JavaSE-1.8'
+    }
+}
+
+bootRun {
+    systemProperties = System.properties
+}
+
+tasks.withType(FindBugs) {
+    reports {
+        xml.enabled = true
+        html.enabled = false
+    }
+    reportLevel = "low"
+    ignoreFailures = true
+}
+
+findbugs {
+    sourceSets = []//disables findbugs from running automatically with build/check tasks
+}

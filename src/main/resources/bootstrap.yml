@@ -1,0 +1,16 @@
+spring:
+  application:
+    name: pg-jpa-demo
+  health:
+    check:
+      endpoint: /health?key=HEALTHCHECK
+management:
+  endpoints:
+    web:
+      base-path: /
+server:
+  servlet:
+    contextPath: /demo/category
+  port: 9140
+  use-forward-headers: true
+  max-http-header-size: 100000
